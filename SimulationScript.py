@@ -66,7 +66,7 @@ def get_initial_configuration(N, random_influence=0.2):
     radius = r = int(N / 10.0)
 
     #A[N2 - r:N2 + r, N2 - r:N2 + r] = 0.50
-    B#[N2 - r:N2 + r, N2 - r:N2 + r] = 0.25
+    #B[N2 - r:N2 + r, N2 - r:N2 + r] = 0.25
 
     A = np.random.random((N,N))
 
@@ -117,17 +117,22 @@ def randomNoise(lower,upper):
 
 #Hash mapping tuples of feed and kill rates to specific patterns
 #Note: not all diffusions coefficients work for the f,k tuples in the map
+
+'''(0.046, 0.0594): "PatternRho",
+    (0.094, 0.063): "PatternEta",
+    (0.087, 0.020): "PatternTauSigma",
+    (0.0115, 0.033): "PatternAlpha",
+    (0.049, 0.0597): "PatternBeta"'''
+
 patternHash = {
 
     (0.050, 0.063): "PatternKappa",
     (0.042, 0.059): "PatternDelta",
     (0.022, 0.059): "PatternEpsilon",
-    (0.046, 0.0594): "PatternRho",
-    (0.094, 0.063): "PatternEta",
-    (0.087, 0.020): "PatternTauSigma",
-    (0.0115, 0.033): "PatternAlpha",
-    (0.049, 0.0597): "PatternBeta",
-    (0.046, 0.0594): "PatternIota"
+    (0.046, 0.0594): "PatternIota",
+    (0.060, 0.062): "PatternGamma"
+
+
 }
 
 # Generates a nxnx2xk tensor of groups of two, square tensors of concentrations of A and B given a certain
@@ -166,7 +171,7 @@ N_simulation_steps = 10000
 
 '''After some tinkering, the below initialization method was determined
  to produce solid results for a wide range of parameter sets and patterns '''
-def getInitialConfig2(N, splotches):
+def official_initial_config(N, splotches):
     A = 4 * np.random.random((N, N))
     B = np.random.random((N, N))
     summed = A + B
@@ -176,10 +181,10 @@ def getInitialConfig2(N, splotches):
         i = np.random.randint(11, N - 11)
         j = np.random.randint(11, N - 11)
         # index = np.random.randint(11, N - 11)
-        A[i - 10: i + 10, j - 10: j] = 0
+        A[i - 10: i + 10, j - 10: j] = 0.2
         i = np.random.randint(11, N - 11)
         j = np.random.randint(11, N - 11)
-        B[i - 10: i + 10, j - 10: j] = 1
+        B[i - 10: i + 10, j - 10: j] = 0.8
 
     tensorA = torch.from_numpy(A)
     tensorB = torch.from_numpy(B)
@@ -198,7 +203,7 @@ def equilibriaGenerate( diffusionA, diffusionB, feed, kill, iterations, patterns
 
     # Initializes tensors A and B
     # A, B = getInitialConfig(n)
-    A, B = getInitialConfig2(N,40)
+    A, B = official_initial_config(N, 10)
     # set the diffusion coefficients
     DB = diffusionB
     DA = diffusionA
@@ -206,35 +211,41 @@ def equilibriaGenerate( diffusionA, diffusionB, feed, kill, iterations, patterns
     # savedTensors = torch.zeros([n, n, 2, numberOfArraysToSave])
 
     for i in range(iterations):
+        print(i)
         for t in range(N_simulation_steps):
             # update system until equilibria is reached
             A, B = gray_scott_update(A, B, DA, DB, feed, kill, delta_t)
 
         # if the eq are not good:
-        if (torch.std(A) < 10 ^ -20 or torch.std(B) < 10 ^ -20):
+        '''if (torch.std(A) < (10 ^ -20) or torch.std(B) < (10 ^ -20)):
             iterations += 1
-        print(iterations)
+        print(iterations)'''
         # Save the pair of tensors to file number according to its loop iteration
         reactionParameters = [diffusionA, diffusionB, feed, kill]
         np.savez(patterns.get((feed, kill)) + "Equilibria" + str(i) + ".npz", EquilibriaA=A,
                  EquilibriaB=B, parameters=reactionParameters)
-        A, B = getInitialConfig2(N,40)
+        A, B = official_initial_config(N, 10)
 
 
 #Basic data generation below
 
-nreps = 20
+#Number of simulations of a particular set of parameters (note: equilibria of the same parameters
+#will look similar but in fact will be slightly different)
+n_instances = 75
 #PatternDelta
-equilibriaGenerate(0.1, 0.04, 0.042, 0.059, nreps, patternHash)
+#equilibriaGenerate(0.1, 0.04, 0.042, 0.059, n_instances, patternHash)
 
 #PatternKappa
-equilibriaGenerate(0.09, 0.03, 0.050, 0.063, nreps, patternHash)
+#equilibriaGenerate(0.09, 0.03, 0.050, 0.063, n_instances, patternHash)
 
 #PatternEpsilon
-equilibriaGenerate(0.078, 0.013, 0.022, 0.059, nreps, patternHash)
+#equilibriaGenerate(0.078, 0.013, 0.022, 0.059, n_instances, patternHash)
 
 #PatternIota
-equilibriaGenerate(0.1, 0.05, 0.046, 0.0594, nreps, patternHash)
+#equilibriaGenerate(0.1, 0.05, 0.046, 0.0594, n_instances, patternHash)
+
+#PatternGamma
+equilibriaGenerate(0.16, 0.08, 0.060, 0.062, n_instances, patternHash)
 
 #PatternRho
 #equilibriaGenerate(0.053, 0.038, 0.046, 0.0594, nreps, patternHash)

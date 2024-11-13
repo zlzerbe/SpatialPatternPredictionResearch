@@ -126,9 +126,9 @@ def loadEquilibriumFiles(directory, dim = (200, 200, 2, 223)):
     #listDirectory = os.fsencode(directory)
     loaded_tensors = []
     tensor_labels = []
-    label_mapping = {"Delta":0, "Kappa":1, "Iota":2, "Epsilon":3, "Eta":4, "TauSigma":5,"Alpha":6,"Beta":7 }
+    label_mapping = {"Delta":0, "Kappa":1, "Iota":2, "Epsilon":3, "Gamma":4, "Eta":5,"Alpha":6,"Beta":7, "TauSigma":8 }
     for file in os.listdir(directory):
-        print(file)
+        #print(file)
         for key in label_mapping.keys():
             if key in file:
 
@@ -145,8 +145,6 @@ def loadEquilibriumFiles(directory, dim = (200, 200, 2, 223)):
                             tensor_labels.append(label_mapping[poss_lab])
                             print(label_mapping[poss_lab])
 
-
-
                 except KeyError:
                     print("Key does not exist")
                 except FileNotFoundError:
@@ -156,7 +154,9 @@ def loadEquilibriumFiles(directory, dim = (200, 200, 2, 223)):
     return torch.stack(loaded_tensors).float(), torch.LongTensor(tensor_labels)
 
 
-EquilibriaTensors, TruthLabels = loadEquilibriumFiles("/Users/zachzerbe/PycharmProjects/ReactionDiffusionV4")
+'''Loading the equilibria data from .npz file in specific directory. Truth labels will be a tensor of numbers '''
+
+EquilibriaTensors, TruthLabels = loadEquilibriumFiles("/Users/zachzerbe/PycharmProjects/SpatialPatternPredictionResearch")
 print(EquilibriaTensors.shape, TruthLabels.shape)
 print(EquilibriaTensors.dtype, TruthLabels.dtype)
 
@@ -171,15 +171,14 @@ print(poss_labels)
 
 
 #instantiate a CNN called model
-model = CNN(output_dim= 4).to(device)
+model = CNN(output_dim= 5).to(device)
 print(poss_labels, model)
 
 #Loss function
 
 criterion = nn.NLLLoss()
 
-#adam optimizer
-
+#Optimizer and learning rate
 learning_rate = 1e-4
 optimizer = torch.optim.Adam(model.parameters(), lr= learning_rate)
 
