@@ -5,8 +5,6 @@ from torch.utils.data import DataLoader, Dataset
 import numpy as np
 import matplotlib.pyplot as plt
 
-'''This version is currently training and testing to 100% accuracy with high quality data. 
-The learning rate is 1e^-4'''
 
 #Manage computing source
 device = (
@@ -105,18 +103,6 @@ class CNN(nn.Module):
 
 
 
-        #Softmax- turns arbitrary numbers into probabilities
-
-        #Argmax– the index of the largest logit
-
-        #max largest logit
-
-
-# Computing cluster password – tigers214834 user – zzerbe
-
-
-
-
 '''Method to get tensors of grayscale values of matrices A and B from the .npz files.(This method 
     does not unpack the parameter values from the .npz files, as the truth parameters are not 
     needed for this task). The A and B matrices for each parameter set are stack before being added to the
@@ -126,7 +112,7 @@ def loadEquilibriumFiles(directory, dim = (200, 200, 2, 223)):
     #listDirectory = os.fsencode(directory)
     loaded_tensors = []
     tensor_labels = []
-    label_mapping = {"Delta":0, "Kappa":1, "Iota":2, "Epsilon":3, "Gamma":4, "Eta":5,"Alpha":6,"Beta":7, "TauSigma":8 }
+    label_mapping = {"Delta":0, "Kappa":1, "Iota":2, "Epsilon":3, "Gamma":4, "ripple":5,"Alpha":6,"Beta":7, "TauSigma":8 }
     for file in os.listdir(directory):
         #print(file)
         for key in label_mapping.keys():
@@ -157,35 +143,9 @@ def loadEquilibriumFiles(directory, dim = (200, 200, 2, 223)):
 '''Loading the equilibria data from .npz file in specific directory. Truth labels will be a tensor of numbers '''
 
 EquilibriaTensors, TruthLabels = loadEquilibriumFiles("/Users/zachzerbe/PycharmProjects/SpatialPatternPredictionResearch")
-print(EquilibriaTensors.shape, TruthLabels.shape)
-print(EquilibriaTensors.dtype, TruthLabels.dtype)
-
-print(TruthLabels)
-
-
-
-poss_labels = int(TruthLabels.max()) + 1
-print(poss_labels)
-#making the model
-
-
-
-#instantiate a CNN called model
-model = CNN(output_dim= 5).to(device)
-print(poss_labels, model)
-
-#Loss function
-
-criterion = nn.NLLLoss()
-
-#Optimizer and learning rate
-learning_rate = 1e-4
-optimizer = torch.optim.Adam(model.parameters(), lr= learning_rate)
-
 
 #Training loop
 
-batch_size = 64
 def train_loop(dataloader, model, lossFunction, optimizer):
     size = len(dataloader.dataset)
     # Set the model to training mode - important for batch normalization and dropout layers
@@ -212,13 +172,7 @@ def train_loop(dataloader, model, lossFunction, optimizer):
             loss = loss.item()
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-
-
-
-
 #Test/Validation Loop
-
-
 def test_loop(dataloader, model, lossFunction):
     # Set the model to evaluation mode - important for batch normalization and dropout layers
     # Unnecessary in this situation but added for best practices
@@ -244,18 +198,32 @@ def test_loop(dataloader, model, lossFunction):
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
+#instantiate CNN
+#output_dim must be set to the number of patterns being differentiated
+model = CNN(output_dim= 7).to(device)
+
+# ** Hyperparameters **
+
+criterion = nn.NLLLoss()
+
+learning_rate = 1e-4
+optimizer = torch.optim.Adam(model.parameters(), lr= learning_rate)
+
+batchSize = 64
+epochs = 200
 
 data = torch.utils.data.TensorDataset(EquilibriaTensors.float(), TruthLabels.long())
-loader = torch.utils.data.DataLoader(data, shuffle=True, batch_size=64)
+loader = torch.utils.data.DataLoader(data, shuffle=True, batch_size=batchSize)
 
 
 
-epochs = 200
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     train_loop(loader, model, criterion, optimizer)
     test_loop(loader, model, criterion)
 print("Done!")
+
+
 
 
 
