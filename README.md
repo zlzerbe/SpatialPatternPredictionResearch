@@ -1,4 +1,4 @@
-This repository contains code for modeling and solving a 2D Gray-Scott Reaction Diffusion System, as well as a machine learning module capable of being trained to perform categorical or regression tasks involving the system's parameters. 
+This repository contains code for modeling and solving a 2D Gray-Scott Reaction Diffusion System, as well as a machine learning module capable of being trained to perform categorical or regression tasks involving the system's parameters. I pulled some code from the following repository to get started: https://github.com/benmaier/reaction-diffusion/blob/master/gray_scott.ipynb.
 
 The 2D Gray-Scott System involves a set of reaction diffusion equtions given by the chemical reaction A + 2B -> 3B . An initial system involves two NxN arrays of gray scale values representing the concentrations of reactant A and B. The arrays are first randomly given values, then a set amount of KxK (usually 10x10) 'splotches' of 100% reactant A are added to the concentration array of B, and vice versa for the array of A. The system is simulated going to equilibrium by using a finite difference formula for a sufficient number of steps.
 
