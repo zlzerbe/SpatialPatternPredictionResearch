@@ -1,6 +1,3 @@
-'''This file is current for 11/27/24. The use of this file is meant to be for testing paramter sets for different patterns.
-'''
-
 import matplotlib as matplotlib
 # %matplotlib notebook
 import numpy as np
@@ -14,10 +11,6 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 
-
-
-
-
 def discrete_laplacian(M):
     """Get the discrete Laplacian of matrix M"""
     L = -4 * M
@@ -27,8 +20,6 @@ def discrete_laplacian(M):
     L += np.roll(M, (+1, 0), (0, 1))  # bottom neighbor
 
     return L
-
-
 
 def gray_scott_update(A, B, DA, DB, f, k, delta_t):
     """
@@ -74,7 +65,6 @@ def initialize_system(N, n_splotches):
     tensorB = torch.from_numpy(B)
     return tensorA, tensorB
 
-
 def draw(A,B):
     """draw the concentrations"""
     # We get two subplots here. One for the Concentration of A and one for B
@@ -86,28 +76,28 @@ def draw(A,B):
     ax[0].axis('off')
     ax[1].axis('off')
 
-
-# The following function will simulate the gray-scott reaction and draw the resulting grid
+'''The following function tests a range of feed rates and a constant set of DA, DB, and kill parameters 
+    to see if the resulting grids actually contain meaningful patterns. If they do, they are
+   saved to file. The amount of equilibria saved out of total tried is printed. 
+'''
 def simulate_feed_variance(N_simulation_steps, N, splotches, delta_t, DA, DB, kill, feedLower, feedUpper, increment, serial):
     quality_count = 0
     iterations = int((feedUpper - feedLower) / increment)
     A, B = initialize_system(N, splotches)
     for j in range(iterations):
-
         for t in range(N_simulation_steps):
             A, B = gray_scott_update(A, B, DA, DB, feedLower, kill, delta_t)
 
-        print("A:", A, "B:", B)
-        print(torch.std(A), torch.std(B))
+        # Save the equilibria to file if they contain a meaningful pattern
         if (torch.std(A) > 0.00001) and (torch.std(B) > 0.00001):
             quality_count += 1
             reactionParameters = [DA, DB, feedLower, kill]
             np.savez( str(serial) + "Equilibria" + str(j) + ".npz", EquilibriaA=A,
                      EquilibriaB=B, parameters=reactionParameters)
 
-        # increment feed up slightly
+        # increment feed up by increment
         feedLower += increment
-        # re-initialize
+        # re-initialize systems
         A, B = initialize_system(N, splotches)
     print("Quality simulations:" + str(quality_count) + "out of:" + str(iterations) + "total")
 

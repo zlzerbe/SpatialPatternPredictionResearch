@@ -18,10 +18,7 @@ print(f"Using {device} device")
 
 
 
-'''Class defining our convolutional network. Hidden layers include 6 convolutions with 3x3 kernel sizes, 
-    each convolution followed by a RelU Activation layer and a maxPooling layer with 3x3 kernel size.
-    The final two convolutions output 64 channels, before a flattening, several ElU activation layers, 
-    and finally a softmax layer.'''
+
 class CNN(nn.Module):
 
     def __init__(self, output_dim=2):
@@ -61,7 +58,6 @@ class CNN(nn.Module):
         self.pool_layers = torch.nn.ModuleList([pool1, pool2, pool3, pool4, pool5, pool6])
         self.rels = torch.nn.ModuleList([rel1, rel2, rel3, rel4, rel5, rel6])
 
-        # 25x25
         # Flatten the 25x25 dimesion into a 1x625x32
         self.flat = nn.Flatten(1, 3)
         # Linear transformations to extract one value
@@ -103,53 +99,38 @@ class CNN(nn.Module):
 
 
 
-'''Method to get tensors of grayscale values of matrices A and B from the .npz files.(This method 
-    does not unpack the parameter values from the .npz files, as the truth parameters are not 
-    needed for this task). The A and B matrices for each parameter set are stack before being added to the
-    return tensor. A dictionary maps all of the different classifications of patterns to numbers that 
+'''Method to load training data (equilbria tensors and truth labels) from their directory.
     '''
-def loadEquilibriumFiles(directory, dim = (200, 200, 2, 223)):
-    #listDirectory = os.fsencode(directory)
+def loadEquilibriumFiles(directory):
     loaded_tensors = []
     tensor_labels = []
     label_mapping = {"Delta":0, "Kappa":1, "Iota":2, "Epsilon":3, "Gamma":4, "ripple":5,"Alpha":6,"Beta":7, "TauSigma":8 }
     for file in os.listdir(directory):
-        #print(file)
         for key in label_mapping.keys():
             if key in file:
-
                 try:
                     arr = np.load(file, allow_pickle=True)
-                    print(arr["EquilibriaA"])
-                    print(arr["EquilibriaB"])
-                    #print(arr["parameters"])
                     loaded_tensors.append(torch.tensor(
                     np.stack([arr["EquilibriaA"], arr["EquilibriaB"]])
                     ))
+#                   Map file name to truth label
                     for poss_lab in label_mapping.keys():
                         if poss_lab in file:
                             tensor_labels.append(label_mapping[poss_lab])
-                            print(label_mapping[poss_lab])
-
                 except KeyError:
                     print("Key does not exist")
                 except FileNotFoundError:
                     print("file not found")
 
-
     return torch.stack(loaded_tensors).float(), torch.LongTensor(tensor_labels)
 
 
-'''Loading the equilibria data from .npz file in specific directory. Truth labels will be a tensor of numbers '''
 
 EquilibriaTensors, TruthLabels = loadEquilibriumFiles("/Users/zachzerbe/PycharmProjects/SpatialPatternPredictionResearch")
 
 #Training loop
-
 def train_loop(dataloader, model, lossFunction, optimizer):
     size = len(dataloader.dataset)
-    # Set the model to training mode - important for batch normalization and dropout layers
-    # Unnecessary in this situation but added for best practices
     model.train()
     current = 0
     for batch in loader:
@@ -158,8 +139,6 @@ def train_loop(dataloader, model, lossFunction, optimizer):
         bY = bY.to(device)
         pred = model(bX)
         loss = lossFunction(pred, bY)
-    # now bX is a tensor of size (B, 2, K, K)
-    # and bY is a tensor of size (B, )
 
         # Backpropagation
         loss.backward()
@@ -167,7 +146,6 @@ def train_loop(dataloader, model, lossFunction, optimizer):
         optimizer.zero_grad()
 
         current += len(bX)
-        #after every hundred batches
         if current % 100 == 0:
             loss = loss.item()
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
@@ -189,7 +167,6 @@ def test_loop(dataloader, model, lossFunction):
             bX = bX.to(device)
             bY = bY.to(device)
             pred = model(bX)
-            print(pred.argmax(1), bY)
             test_loss += lossFunction(pred, bY).item()
             correct += (pred.argmax(1) == bY).type(torch.float).sum().item()
 
@@ -198,8 +175,8 @@ def test_loop(dataloader, model, lossFunction):
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
-#instantiate CNN
-#output_dim must be set to the number of patterns being differentiated
+
+#output_dim should be set to the number of patterns being differentiated
 model = CNN(output_dim= 7).to(device)
 
 # ** Hyperparameters **

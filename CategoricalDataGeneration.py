@@ -76,7 +76,7 @@ patternHash = {
 
 
 
-'''After some tinkering, the below initialization method was determined
+'''The below initialization method was determined
  to produce solid results for a wide range of parameter sets and patterns '''
 def initialize_system(N, splotches):
     A = 4 * np.random.random((N, N))
@@ -98,46 +98,38 @@ def initialize_system(N, splotches):
     return tensorA, tensorB
 
 
-'''Generates .npz files containing the given equilibria tensors correspopmnding 
+'''Generates .npz files containing the given equilibria tensors corresponding 
     to a specific pattern class. The npz files contain tensors for matrices A and B, as well as the 
     set of parameters that produced them. The method filters out system equilibria that have not 
     converged to a classified pattern or diverged to essentially 1's and 0's
     
     The number of finite difference update steps is hard coded to 10000'''
 def equilibriaGenerate( diffusionA, diffusionB, feed, kill, iterations, patterns,serial, N = 200):
-    # set necessary parameters and initialize the concentration matrices
-    delta_t = 1.0
 
+    delta_t = 1.0
     # Initializes tensors A and B
-    # A, B = getInitialConfig(n)
     A, B = initialize_system(N, 10)
     # set the diffusion coefficients
     DB = diffusionB
     DA = diffusionA
-    # Correct dimensions for the big tensors storing all the equilibria tensors
-    # savedTensors = torch.zeros([n, n, 2, numberOfArraysToSave])
-
     for i in range(iterations):
-        print(i)
         for t in range(10000):
-            # update system until equilibria is reached
+            #update system until equilibria is reached
             A, B = gray_scott_update(A, B, DA, DB, feed, kill, delta_t)
 
-        # if the eq are not good:
-        '''if (torch.std(A) < (10 ^ -20) or torch.std(B) < (10 ^ -20)):
-            iterations += 1
-        print(iterations)'''
-        # Save the pair of tensors to file number according to its loop iteration
-        reactionParameters = [diffusionA, diffusionB, feed, kill]
-        np.savez(str(serial) + patterns.get((feed, kill)) + "Equilibria" + str(i) + ".npz", EquilibriaA=A,
-                 EquilibriaB=B, parameters=reactionParameters)
+        #Save the equilibria to file if they contain a meaningful pattern
+        if (torch.std(A) > 0.00001) and (torch.std(B) > 0.00001):
+            reactionParameters = [diffusionA, diffusionB, feed, kill]
+            np.savez(str(serial) + patterns.get((feed, kill)) + "Equilibria" + str(i) + ".npz", EquilibriaA=A,
+                     EquilibriaB=B, parameters=reactionParameters)
+        #reinitialize system for next generation
         A, B = initialize_system(N, 10)
 
 
-#Basic data generation below
+#Example data generation below
 
-#Number of simulations of a particular set of parameters (note: equilibria of the same parameters
-#will look similar but in fact will be slightly different)
+'''Number of simulations of a particular set of parameters (note: equilibria of the same parameters
+will look similar but in fact will be slightly different)'''
 n_instances = 75
 #PatternDelta
 #equilibriaGenerate(0.1, 0.04, 0.042, 0.059, n_instances, patternHash, 1)
@@ -164,7 +156,7 @@ n_instances = 75
 #equilibriaGenerate(0.087, 0.020, 0.009299, 0.030, n_instances, patternHash, 1)
 
 #PatternAlpha
-equilibriaGenerate(0.0061, 0.005, 0.0115, 0.033, n_instances, patternHash, 2)
+#equilibriaGenerate(0.0061, 0.005, 0.0115, 0.033, n_instances, patternHash, 2)
 
 #PatternBeta
 #equilibriaGenerate(0.01, 0.008, 0.049, 0.0597, nreps, patternHash)
